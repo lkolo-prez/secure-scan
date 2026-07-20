@@ -1,0 +1,13 @@
+# Generowany dashboard (specyficzny dla maszyny — nie wersjonujemy)
+security-dashboard.html
+*.local.html
+
+# macOS
+.DS_Store
+.AppleDouble
+._*
+
+# Edytory
+.vscode/
+.idea/
+*.swp
