@@ -1,20 +1,31 @@
 #!/bin/bash
-# Instalator secure-scan — pobiera skrypt i instaluje do ~/.local/bin
-# Użycie: curl -fsSL https://raw.githubusercontent.com/lkolo-prez/secure-scan/main/install.sh | bash
+# Instalator secure-scan / secure-scan installer
+# Klonuje repo do ~/.local/share i tworzy symlink w ~/.local/bin.
+# Usage: curl -fsSL https://raw.githubusercontent.com/lkolo-prez/secure-scan/main/install.sh | bash
 set -euo pipefail
 
-RAW="https://raw.githubusercontent.com/lkolo-prez/secure-scan/main/secure-scan.sh"
-DEST_DIR="${HOME}/.local/bin"
-DEST="${DEST_DIR}/secure-scan"
+REPO="https://github.com/lkolo-prez/secure-scan.git"
+DEST="${HOME}/.local/share/secure-scan"
+BIN_DIR="${HOME}/.local/bin"
+BIN="${BIN_DIR}/secure-scan"
 
-echo "==> Instaluję secure-scan do ${DEST}"
-mkdir -p "$DEST_DIR"
-curl -fsSL "$RAW" -o "$DEST"
-chmod +x "$DEST"
+echo "==> secure-scan installer"
+mkdir -p "$BIN_DIR" "$(dirname "$DEST")"
 
-echo "==> Gotowe."
+if [ -d "$DEST/.git" ]; then
+  echo "    Aktualizuję / Updating ($DEST)…"
+  git -C "$DEST" pull --ff-only
+else
+  echo "    Klonuję / Cloning → $DEST"
+  git clone --depth 1 "$REPO" "$DEST"
+fi
+
+ln -sf "$DEST/secure-scan.sh" "$BIN"
+chmod +x "$DEST/secure-scan.sh" "$DEST/secure-scan.command" "$DEST"/lib/*.sh 2>/dev/null || true
+
+echo "==> Gotowe / Done."
 case ":$PATH:" in
-  *":$DEST_DIR:"*) echo "    Uruchom:  secure-scan" ;;
-  *) echo "    Dodaj do PATH:  export PATH=\"\$HOME/.local/bin:\$PATH\""
-     echo "    Lub uruchom:    $DEST" ;;
+  *":$BIN_DIR:"*) echo "    Uruchom / Run:  secure-scan" ;;
+  *) echo "    Dodaj do PATH / Add to PATH:  export PATH=\"\$HOME/.local/bin:\$PATH\""
+     echo "    Lub / Or:  $BIN" ;;
 esac
