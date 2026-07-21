@@ -87,6 +87,12 @@ if [ -z "$HINT" ] || [ "$HINT" = "0" ]; then
 else
   add_check "$(L 'Podpowiedzi hasła (logowanie)' 'Password hints (login)')" WARN 3 "$(L 'Włączone — po kilku próbach system pokazuje podpowiedź hasła.' 'Enabled — after failed tries macOS shows a password hint.')" "sudo defaults write /Library/Preferences/com.apple.loginwindow RetriesUntilHint -int 0"
 fi
+# Zero-trust: codzienne konto nie powinno być administratorem
+if id -Gn "$(whoami)" 2>/dev/null | tr ' ' '\n' | grep -qx admin; then
+  add_check "$(L 'Zasada minimalnych uprawnień (zero-trust)' 'Least privilege (zero-trust)')" WARN 4 "$(L 'Codzienne konto jest administratorem — malware działa z Twoimi prawami. Rozważ osobne konto standardowe do pracy.' 'Your daily account is an admin — malware runs with your rights. Consider a separate standard account for daily use.')" "$(L 'Utwórz konto standardowe w Ustawienia > Użytkownicy' 'Create a standard account in Settings > Users')"
+else
+  add_check "$(L 'Zasada minimalnych uprawnień (zero-trust)' 'Least privilege (zero-trust)')" PASS 4 "$(L 'Codzienne konto to konto standardowe — dobra izolacja uprawnień.' 'Daily account is standard — good privilege isolation.')" ""
+fi
 end_cat
 
 # ===== E. PRYWATNOŚĆ I SYSTEM =====
@@ -103,6 +109,14 @@ if profiles list 2>/dev/null | grep -qi "no configuration profiles"; then
   add_check "$(L 'Profile konfiguracyjne / MDM' 'Config profiles / MDM')" PASS 3 "$(L 'Brak zewnętrznych profili.' 'No external profiles.')" ""
 else
   add_check "$(L 'Profile konfiguracyjne / MDM' 'Config profiles / MDM')" WARN 3 "$(L 'Zainstalowane profile — zweryfikuj.' 'Profiles installed — verify.')" "profiles list"
+fi
+# Zero-trust: audyt uprawnień prywatności (TCC) — best-effort (wymaga FDA do pełnego odczytu)
+TCC_DB="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
+TCC_N="$(sqlite3 "$TCC_DB" 'SELECT COUNT(*) FROM access WHERE auth_value>0;' 2>/dev/null)"
+if [ -n "$TCC_N" ] && [ "$TCC_N" -ge 0 ] 2>/dev/null; then
+  add_check "$(L 'Uprawnienia prywatności (TCC)' 'Privacy permissions (TCC)')" INFO 0 "$TCC_N $(L 'przyznanych uprawnień (kamera/mikrofon/ekran/automatyzacja). Cofnij zbędne w Ustawieniach > Prywatność.' 'granted permissions (camera/mic/screen/automation). Revoke unneeded ones in Settings > Privacy.')" ""
+else
+  add_check "$(L 'Uprawnienia prywatności (TCC)' 'Privacy permissions (TCC)')" INFO 0 "$(L 'Pełny audyt wymaga Pełnego Dostępu do Dysku dla Terminala. Przejrzyj ręcznie: Ustawienia > Prywatność i ochrona.' 'Full audit needs Full Disk Access for Terminal. Review manually: Settings > Privacy & Security.')" ""
 fi
 end_cat
 }

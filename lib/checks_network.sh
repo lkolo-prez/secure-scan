@@ -57,5 +57,13 @@ if echo "$ba" | grep -qi "enabled"; then
 else
   add_check "$(L 'Zapora: blokada wszystkich przychodzących' 'Firewall: block all incoming')" INFO 0 "$(L 'Wyłączona (normalne). Włącz w publicznym Wi-Fi dla maks. ochrony.' 'Disabled (normal). Enable on public Wi-Fi for maximum protection.')" ""
 fi
+
+# 8. Ochrona sieci — blokada groźnych domen (blocklist w /etc/hosts) ---------
+local blk; blk="$(awk '/# >>> secure-scan blocklist >>>/{f=1;next}/# <<< secure-scan blocklist <<</{f=0}f&&/^0\.0\.0\.0[ \t]/{c++}END{print c+0}' /etc/hosts 2>/dev/null)"; blk="${blk//[^0-9]/}"; blk="${blk:-0}"
+if [ "$blk" -gt 0 ]; then
+  add_check "$(L 'Ochrona sieci (blokada domen)' 'Web protection (domain blocking)')" PASS 8 "$(L 'Aktywna —' 'Active —') $blk $(L 'groźnych domen (malware/phishing/trackery) zablokowanych.' 'malicious domains (malware/phishing/trackers) blocked.')" ""
+else
+  add_check "$(L 'Ochrona sieci (blokada domen)' 'Web protection (domain blocking)')" WARN 8 "$(L 'Wyłączona — włącz automatyczne blokowanie groźnych stron.' 'Off — enable automatic blocking of malicious sites.')" "secure-scan --protect"
+fi
 end_cat
 }

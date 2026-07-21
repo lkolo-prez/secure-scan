@@ -2,6 +2,20 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [3.2.0] — 2026-07-21
+
+### Added
+- 🌐 **Web protection (`--protect` / `--unprotect`)** — installs a maintained hosts blocklist (~80k malware/phishing/tracker domains, StevenBlack + offline seed fallback) into a marked, reversible block in `/etc/hosts`, then flushes DNS. Exposed in the app as a **Web protection** switch. New `--protect-status`.
+- 📥 **Downloads module** — unsigned installer detection (`spctl`), scripts/executables in Downloads, **extension-masquerade** malware (document that is actually code), quarantine hygiene.
+- 🔐 **Zero-trust checks** — least-privilege daily account, TCC privacy-permission audit.
+- 🖥️ **App polish** — custom icon (`tools/IconGen.swift`), **Start-at-login** (SMAppService), **score-trend sparkline** with per-scan history, **Web protection** toggle.
+- 🧪 **Test suite** (`tests/run-tests.sh`, 39 tests) and **security self-audit** (`scripts/security-audit.sh`: shellcheck, secret scan, dangerous-pattern & permission checks). CI now runs both, then builds the app **and a DMG**.
+- 📦 **`make-dmg.sh`** — distributable `SecureScan-<ver>.dmg`.
+
+### Changed
+- **Rebranded to Aircloud — Łukasz Kołodziej** (LICENSE, app identifier `pl.com.aircloud.securescan`, UI, report footer). Still MIT / open source.
+- 53 checks across 11 categories. `/etc/hosts` malware check now ignores the managed blocklist region.
+
 ## [3.0.0] — 2026-07-21
 
 ### Added

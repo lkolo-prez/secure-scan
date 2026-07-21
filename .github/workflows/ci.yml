@@ -8,22 +8,25 @@ on:
 
 jobs:
   lint:
-    name: Lint (bash -n + shellcheck)
+    name: Lint & security audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Syntax check
         run: |
-          for f in secure-scan.sh lib/*.sh; do bash -n "$f"; done
+          for f in secure-scan.sh lib/*.sh tests/*.sh scripts/*.sh build-app.sh make-dmg.sh install.sh; do bash -n "$f"; done
       - name: ShellCheck (errors only)
-        run: |
-          shellcheck -S error -e SC1090,SC1091 secure-scan.sh lib/*.sh
+        run: shellcheck -S error -e SC1090,SC1091 secure-scan.sh lib/*.sh tests/*.sh scripts/*.sh
+      - name: Security self-audit
+        run: bash scripts/security-audit.sh
 
-  smoke:
-    name: Smoke test (macOS)
+  test-build:
+    name: Test & build app (macOS)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Test suite
+        run: bash tests/run-tests.sh
       - name: Version & help
         run: |
           ./secure-scan.sh --version
@@ -37,3 +40,7 @@ jobs:
           ./build-app.sh
           test -d dist/SecureScan.app/Contents/MacOS
           codesign --verify --verbose dist/SecureScan.app
+      - name: Build DMG
+        run: |
+          ./make-dmg.sh
+          ls -lh dist/*.dmg

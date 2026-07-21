@@ -1,0 +1,28 @@
+# secure-scan wbudowana lista awaryjna (fallback) — by Aircloud
+# Używana, gdy pobranie pełnej listy się nie powiedzie. Jedna domena na wiersz.
+# Znane domeny malvertisingu / trackerów / telemetrii (blokada = 0.0.0.0).
+doubleclick.net
+googleadservices.com
+googlesyndication.com
+adservice.google.com
+ads.yahoo.com
+analytics.yahoo.com
+scorecardresearch.com
+quantserve.com
+adcolony.com
+taboola.com
+outbrain.com
+zedo.com
+adnxs.com
+rubiconproject.com
+pubmatic.com
+openx.net
+criteo.com
+mathtag.com
+bidswitch.net
+serving-sys.com
+2o7.net
+omtrdc.net
+malwaredomainlist.com
+malware.testing.google.test
+phishing.example.com

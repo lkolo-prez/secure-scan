@@ -2,6 +2,7 @@
 // Silnik (secure-scan.sh + lib/) jest w Contents/Resources/engine i wywoływany z --json.
 import SwiftUI
 import AppKit
+import ServiceManagement
 
 // MARK: - Model danych (zgodny z JSON silnika)
 
@@ -18,6 +19,29 @@ struct Check: Codable, Identifiable, Hashable {
     let category, name, status, detail: String
     let weight: Int
     var id: String { category + "/" + name }
+}
+
+// MARK: - Historia wyniku (trend)
+
+struct ScorePoint: Codable, Identifiable {
+    let t: Double        // znacznik czasu (epoch)
+    let score: Int
+    var id: Double { t }
+}
+
+enum HistoryStore {
+    static var url: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("SecureScan", isDirectory: true)
+        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        return base.appendingPathComponent("history.json")
+    }
+    static func load() -> [ScorePoint] {
+        (try? JSONDecoder().decode([ScorePoint].self, from: Data(contentsOf: url))) ?? []
+    }
+    static func save(_ points: [ScorePoint]) {
+        try? JSONEncoder().encode(points).write(to: url)
+    }
 }
 
 // MARK: - Uruchamianie silnika
@@ -55,8 +79,21 @@ final class ScanModel: ObservableObject {
     @Published var lang: String = UserDefaults.standard.string(forKey: "lang") ?? "pl" {
         didSet { UserDefaults.standard.set(lang, forKey: "lang") }
     }
+    @Published var history: [ScorePoint] = HistoryStore.load()
+    @Published var launchAtLogin: Bool = (SMAppService.mainApp.status == .enabled)
+    @Published var blockedDomains: Int = 0
 
     func t(_ pl: String, _ en: String) -> String { lang == "en" ? en : pl }
+
+    /// Poprzedni wynik (do delty trendu).
+    var previousScore: Int? { history.count >= 2 ? history[history.count - 2].score : nil }
+
+    func toggleLaunchAtLogin(_ on: Bool) {
+        do {
+            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+        } catch { /* niepodpisana apka może odmówić — status i tak odświeżamy */ }
+        launchAtLogin = (SMAppService.mainApp.status == .enabled)
+    }
 
     func scan() {
         guard !scanning else { return }
@@ -73,6 +110,10 @@ final class ScanModel: ObservableObject {
                     return
                 }
                 withAnimation { self.report = rep }
+                // zapis punktu do historii/trendu
+                self.history.append(ScorePoint(t: Date().timeIntervalSince1970, score: rep.score))
+                if self.history.count > 100 { self.history.removeFirst(self.history.count - 100) }
+                HistoryStore.save(self.history)
             }
         }
     }
@@ -91,6 +132,31 @@ final class ScanModel: ObservableObject {
             osa.arguments = ["-e", cmd]
             try? osa.run(); osa.waitUntilExit()
             await MainActor.run { self.scanning = false; self.busyLabel = ""; self.scan() }
+        }
+    }
+
+    func refreshProtection() {
+        Task.detached(priority: .utility) {
+            let r = Engine.run(args: ["--protect-status"])
+            let n = Int(r.out.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+            await MainActor.run { self.blockedDomains = n }
+        }
+    }
+
+    func toggleProtection(_ on: Bool) {
+        guard !scanning else { return }
+        scanning = true
+        busyLabel = on ? t("Włączam ochronę sieci…", "Enabling web protection…")
+                       : t("Wyłączam ochronę sieci…", "Disabling web protection…")
+        let script = Engine.scriptPath
+        let arg = on ? "--protect" : "--unprotect"
+        Task.detached(priority: .userInitiated) {
+            let cmd = "do shell script \"'\(script)' \(arg)\" with administrator privileges"
+            let osa = Process()
+            osa.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+            osa.arguments = ["-e", cmd]
+            try? osa.run(); osa.waitUntilExit()
+            await MainActor.run { self.scanning = false; self.busyLabel = ""; self.refreshProtection(); self.scan() }
         }
     }
 
@@ -164,6 +230,77 @@ struct CheckRow: View {
     }
 }
 
+struct Sparkline: View {
+    let points: [Int]
+    var body: some View {
+        GeometryReader { geo in
+            if points.count >= 2 {
+                let maxV = 100.0
+                let minV = max(0.0, Double(points.min() ?? 0) - 5)
+                let range = max(1.0, maxV - minV)
+                Path { p in
+                    for (i, v) in points.enumerated() {
+                        let x = geo.size.width * Double(i) / Double(points.count - 1)
+                        let y = geo.size.height * (1 - (Double(v) - minV) / range)
+                        if i == 0 { p.move(to: CGPoint(x: x, y: y)) } else { p.addLine(to: CGPoint(x: x, y: y)) }
+                    }
+                }
+                .stroke(scoreColor(points.last ?? 0),
+                        style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
+            }
+        }
+    }
+}
+
+struct TrendBar: View {
+    @EnvironmentObject var model: ScanModel
+    var delta: Int? {
+        guard let prev = model.previousScore, let cur = model.report?.score else { return nil }
+        return cur - prev
+    }
+    var body: some View {
+        HStack(spacing: 10) {
+            if model.history.count >= 2 {
+                Sparkline(points: model.history.suffix(24).map { $0.score })
+                    .frame(width: 130, height: 24)
+                if let d = delta, d != 0 {
+                    Text("\(d > 0 ? "▲" : "▼") \(abs(d))")
+                        .font(.caption2.bold()).foregroundStyle(d > 0 ? .green : .red)
+                }
+            } else {
+                Text(model.t("Trend pojawi się po kolejnych skanach", "Trend appears after more scans"))
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Toggle(isOn: Binding(get: { model.launchAtLogin }, set: { model.toggleLaunchAtLogin($0) })) {
+                Text(model.t("Start przy logowaniu", "Start at login")).font(.caption2)
+            }.toggleStyle(.checkbox).controlSize(.small)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 6)
+    }
+}
+
+struct ProtectBar: View {
+    @EnvironmentObject var model: ScanModel
+    var on: Bool { model.blockedDomains > 0 }
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: on ? "checkmark.shield.fill" : "shield.slash")
+                .foregroundStyle(on ? .green : .secondary)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(model.t("Ochrona sieci", "Web protection")).font(.caption.weight(.medium))
+                Text(on ? "\(model.blockedDomains) \(model.t("groźnych domen zablokowanych", "malicious domains blocked"))"
+                        : model.t("wyłączona — auto-blokada groźnych stron", "off — auto-block malicious sites"))
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Toggle("", isOn: Binding(get: { on }, set: { model.toggleProtection($0) }))
+                .labelsHidden().toggleStyle(.switch).controlSize(.small).disabled(model.scanning)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 6)
+    }
+}
+
 struct DashboardView: View {
     @EnvironmentObject var model: ScanModel
 
@@ -177,6 +314,10 @@ struct DashboardView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            Divider()
+            TrendBar()
+            Divider()
+            ProtectBar()
             Divider()
             if let rep = model.report {
                 ScrollView {
@@ -201,15 +342,18 @@ struct DashboardView: View {
             Divider()
             footer
         }
-        .frame(width: 380, height: 560)
-        .onAppear { if model.report == nil { model.scan() } }
+        .frame(width: 380, height: 640)
+        .onAppear { if model.report == nil { model.scan() }; model.refreshProtection() }
     }
 
     var header: some View {
         HStack(spacing: 14) {
             GaugeView(score: model.report?.score ?? 0)
             VStack(alignment: .leading, spacing: 6) {
-                Text("secure-scan").font(.headline)
+                HStack(spacing: 6) {
+                    Text("secure-scan").font(.headline)
+                    Text("by Aircloud").font(.caption2).foregroundStyle(.secondary)
+                }
                 if let r = model.report {
                     Text(r.grade).font(.subheadline.bold()).foregroundStyle(scoreColor(r.score))
                     HStack(spacing: 12) {

@@ -4,7 +4,7 @@
 #  Sourced by secure-scan.sh. Nie uruchamiaj bezpośrednio.
 # ============================================================================
 
-VERSION="3.0.0"
+VERSION="3.2.0"
 
 # --- i18n: L "polski" "english" ---------------------------------------------
 # LANG_SEL ustawiane w secure-scan.sh (pl|en)
@@ -168,7 +168,8 @@ $SECTIONS
 <footer>
   <b>secure-scan v$VERSION</b> &middot; $TOTAL $(L 'kontroli punktowanych' 'scored checks') + $N_INFO info<br>
   $(L 'Odśwież' 'Refresh'): <code>secure-scan</code> &middot; $(L 'Napraw' 'Fix'): <code>secure-scan --fix</code> &middot;
-  <a href="https://github.com/lkolo-prez/secure-scan">github.com/lkolo-prez/secure-scan</a>
+  <a href="https://github.com/lkolo-prez/secure-scan">github.com/lkolo-prez/secure-scan</a><br>
+  <span style="opacity:.7">by Aircloud — Łukasz Kołodziej &middot; MIT</span>
 </footer>
 </body></html>
 HTMLEOF

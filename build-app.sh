@@ -32,22 +32,42 @@ cp "$ROOT/secure-scan.sh" "$CONTENTS/Resources/engine/"
 cp -R "$ROOT/lib" "$CONTENTS/Resources/engine/"
 chmod +x "$CONTENTS/Resources/engine/secure-scan.sh" "$CONTENTS/Resources/engine/lib/"*.sh
 
+# 3b. Ikona aplikacji (nieblokujące — gdyby renderowanie zawiodło) -----------
+ICON_KEY=""
+if (
+  set -e
+  TOOLS="$DIST/_icon"; mkdir -p "$TOOLS/AppIcon.iconset"
+  swiftc -sdk "$SDK" -target "$TARGET" "$ROOT/tools/IconGen.swift" -o "$TOOLS/icongen"
+  "$TOOLS/icongen" "$TOOLS/icon.png"
+  for s in 16 32 128 256 512; do
+    sips -z $s $s        "$TOOLS/icon.png" --out "$TOOLS/AppIcon.iconset/icon_${s}x${s}.png"      >/dev/null
+    sips -z $((s*2)) $((s*2)) "$TOOLS/icon.png" --out "$TOOLS/AppIcon.iconset/icon_${s}x${s}@2x.png" >/dev/null
+  done
+  iconutil -c icns "$TOOLS/AppIcon.iconset" -o "$CONTENTS/Resources/AppIcon.icns"
+); then
+  echo "==> Ikona wygenerowana."
+  ICON_KEY="  <key>CFBundleIconFile</key><string>AppIcon</string>"
+else
+  echo "⚠  Pominięto generowanie ikony (użyję domyślnej)."
+fi
+
 # 4. Info.plist --------------------------------------------------------------
 cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>CFBundleExecutable</key><string>SecureScan</string>
-  <key>CFBundleIdentifier</key><string>com.securescan.app</string>
+  <key>CFBundleIdentifier</key><string>pl.com.aircloud.securescan</string>
   <key>CFBundleName</key><string>SecureScan</string>
-  <key>CFBundleDisplayName</key><string>SecureScan</string>
+  <key>CFBundleDisplayName</key><string>SecureScan by Aircloud</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$VERSION</string>
   <key>CFBundlePackageType</key><string>APPL</string>
+$ICON_KEY
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSHumanReadableCopyright</key><string>MIT © 2026 lkolo-prez</string>
+  <key>NSHumanReadableCopyright</key><string>MIT © 2026 Aircloud — Łukasz Kołodziej</string>
 </dict></plist>
 PLIST
 
