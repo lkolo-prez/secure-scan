@@ -1,6 +1,6 @@
 # 🛡️ secure-scan
 
-> **Zaawansowany audyt bezpieczeństwa macOS** — 39 kontroli tylko-do-odczytu w 10 kategoriach, **Security Score (0–100)**, samodzielny dashboard HTML i **utwardzanie systemu jednym poleceniem**.
+> **Zaawansowany audyt bezpieczeństwa macOS** — natywna aplikacja w pasku menu (**`.app`**) i CLI: 46 kontroli tylko-do-odczytu w 10 kategoriach, **Security Score (0–100)** i **utwardzanie systemu jednym kliknięciem**.
 
 [🇬🇧 English](README.md) · **🇵🇱 Polski**
 
@@ -17,7 +17,8 @@ Jeden projekt, zero zależności. **Wszystkie skany są read-only** — niczego 
 
 ## ✨ Funkcje
 
-- **39 kontroli** w **10 kategoriach** (system, malware/persistencja, przeglądarki, wydajność/wycieki, sieć, integralność plików)
+- 🖥️ **Natywna aplikacja macOS** — apka SwiftUI w pasku menu z wynikiem na pierwszy rzut oka, natywnym dashboardem, przyciskami `Skanuj` / `Napraw` / `Raport` i przełącznikiem PL/EN. Budowana samym `swiftc` (bez pełnego Xcode).
+- **46 kontroli** w **10 kategoriach** (system, malware/persistencja, przeglądarki, wydajność/wycieki, sieć, integralność plików)
 - **Security Score 0–100** z wagami wg krytyczności + wyniki per-kategoria
 - Wizualny **dashboard HTML** (gauge, nawigacja, karty OK/Uwaga/Błąd/Info, komendy naprawcze), tryb jasny i ciemny
 - **Auto-naprawa `--fix`** — włącza zaporę, stealth, Gatekeeper, wyłącza gościa, ustawia natychmiastową blokadę… interaktywnie lub `--yes`
@@ -26,15 +27,29 @@ Jeden projekt, zero zależności. **Wszystkie skany są read-only** — niczego 
 - **Eksport JSON** (`--json`) do CI/automatyzacji
 - Klikany dwukrotnie launcher **`.command`** dla osób nietechnicznych
 
-## 🚀 Szybki start
+## 🖥️ Natywna aplikacja (zalecane)
+
+Zbuduj klikalną apkę w pasku menu (wymaga tylko Xcode Command Line Tools — `xcode-select --install`):
 
 ```bash
 git clone https://github.com/lkolo-prez/secure-scan.git
 cd secure-scan
-./secure-scan.sh
+./build-app.sh
+open dist/SecureScan.app          # w pasku menu pojawi się 🛡 z Twoim wynikiem
+cp -R dist/SecureScan.app /Applications/   # opcjonalnie: zainstaluj
 ```
 
-albo instalacja do `~/.local/bin`:
+Apka ma wbudowany silnik skanujący i uruchamia go przez `--json`; wynik, rozbicie i naprawa są w natywnym panelu SwiftUI. `Napraw` wywołuje standardowy monit macOS o hasło administratora. Pierwsze uruchomienie niepodpisanej apki: prawy przycisk → **Otwórz** (lub *Ustawienia → Prywatność i ochrona → Otwórz mimo to*).
+
+> Obecnie budowana dla **Apple Silicon (arm64)**. Dla Intela: `MACOS_TARGET=x86_64-apple-macos14.0 ./build-app.sh`.
+
+## 🚀 Szybki start (CLI)
+
+```bash
+./secure-scan.sh                  # z sklonowanego repo
+```
+
+albo instalacja CLI do `~/.local/bin`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/lkolo-prez/secure-scan/main/install.sh | bash
@@ -63,13 +78,13 @@ Moduły: `core`, `malware`, `browser`, `perf`, `network`, `files`.
 | 🔐 **Szyfrowanie i rozruch** | FileVault, SIP, Secure Boot / Signed System Volume |
 | 🌐 **Sieć i zapora** | Zapora aplikacyjna, tryb stealth, SSH, Screen Sharing (VNC), odbiornik AirPlay |
 | 🛡️ **Aktualizacje i ochrona** | Aktualizacje systemu, auto-updates, Gatekeeper, XProtect |
-| 👤 **Konta i dostęp** | Root, gość, automatyczne logowanie, hasło blokady ekranu |
+| 👤 **Konta i dostęp** | Root, gość, automatyczne logowanie, hasło blokady ekranu, podpowiedzi hasła |
 | 🔒 **Prywatność i system** | Rozszerzenia jądra, rozszerzenia systemowe, profile / MDM |
-| 🧟 **Malware i persistencja** | Podejrzane elementy startowe (wzorce trojanów), cron, znany adware/PUP, status ClamAV, higiena Pobranych |
+| 🧟 **Malware i persistencja** | Podejrzane elementy startowe (wzorce trojanów), cron, znany adware/PUP, status ClamAV, higiena Pobranych, **manipulacja `/etc/hosts`** |
 | 🌍 **Przeglądarki** | Liczba rozszerzeń per przeglądarka, wymuszone polityki (ślady hijacku), wtyczki internetowe |
 | 🔥 **Wydajność i wycieki** | Top CPU, procesy z dużym RSS (wycieki pamięci), presja swap, uptime |
-| 📡 **Aktywność sieciowa** | Porty nasłuchujące, połączenia wychodzące, VPN, serwer DNS |
-| 📁 **Integralność plików** | Binaria SUID/SGID, uprawnienia katalogów startowych, kwarantanna, wykonywalne w `/tmp` |
+| 📡 **Aktywność sieciowa** | Porty nasłuchujące, połączenia wychodzące, VPN, DNS, **proxy/PAC**, **ekspozycja File Sharing**, block-all zapory |
+| 📁 **Integralność plików** | Binaria SUID/SGID, uprawnienia katalogów startowych, kwarantanna, wykonywalne w `/tmp`, **kopie Time Machine**, **klucze SSH** |
 
 ## 🔧 Auto-naprawa (`--fix`)
 

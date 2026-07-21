@@ -32,3 +32,8 @@ jobs:
         run: |
           ./secure-scan.sh --only files --json | tee out.json
           grep -q '"tool":"secure-scan"' out.json
+      - name: Build native app (SecureScan.app)
+        run: |
+          ./build-app.sh
+          test -d dist/SecureScan.app/Contents/MacOS
+          codesign --verify --verbose dist/SecureScan.app

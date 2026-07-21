@@ -1,6 +1,14 @@
-# Generowany dashboard (specyficzny dla maszyny — nie wersjonujemy)
+# Generowany dashboard (specyficzny dla maszyny)
 security-dashboard.html
 *.local.html
+
+# Artefakty budowy aplikacji
+dist/
+*.app
+*.dmg
+.build/
+*.o
+*.swiftmodule
 
 # macOS
 .DS_Store

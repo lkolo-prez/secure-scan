@@ -41,5 +41,20 @@ if [ -z "$tmpexec" ]; then
 else
   add_check "$(L 'Wykonywalne w /tmp' 'Executables in /tmp')" WARN 5 "$(L 'Wykonywalne pliki w /tmp — zweryfikuj:' 'Executables in /tmp — verify:')\n$(printf '%s' "$tmpexec" | sed 's#.*/##' | tr '\n' ' ')" "ls -la /tmp"
 fi
+
+# 5. Kopie zapasowe Time Machine (odzyskiwanie po ransomware) ---------------
+if tmutil destinationinfo 2>/dev/null | grep -qiE 'Kind|Name|Mount'; then
+  add_check "$(L 'Kopie zapasowe (Time Machine)' 'Backups (Time Machine)')" INFO 0 "$(L 'Skonfigurowane — dobra ochrona przed ransomware/utratą danych.' 'Configured — good protection against ransomware/data loss.')" ""
+else
+  add_check "$(L 'Kopie zapasowe (Time Machine)' 'Backups (Time Machine)')" WARN 4 "$(L 'Brak celu Time Machine — bez kopii nie odzyskasz danych po ransomware/awarii.' 'No Time Machine target — no backups to recover from ransomware/failure.')" "$(L 'Ustawienia > Ogólne > Time Machine' 'Settings > General > Time Machine')"
+fi
+
+# 6. Klucze prywatne SSH ----------------------------------------------------
+local sshk; sshk="$(ls "$HOME/.ssh"/id_* 2>/dev/null | grep -vc '\.pub$')"; sshk="${sshk//[^0-9]/}"; sshk="${sshk:-0}"
+if [ "$sshk" -eq 0 ]; then
+  add_check "$(L 'Klucze prywatne SSH' 'SSH private keys')" PASS 3 "$(L 'Brak kluczy prywatnych SSH w ~/.ssh.' 'No SSH private keys in ~/.ssh.')" ""
+else
+  add_check "$(L 'Klucze prywatne SSH' 'SSH private keys')" INFO 0 "$sshk $(L 'kluczy prywatnych — upewnij się, że są chronione hasłem (passphrase).' 'private keys — ensure each is passphrase-protected.')" "ssh-keygen -y -f ~/.ssh/id_ed25519"
+fi
 end_cat
 }

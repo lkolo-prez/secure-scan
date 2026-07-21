@@ -4,7 +4,7 @@
 #  Sourced by secure-scan.sh. Nie uruchamiaj bezpośrednio.
 # ============================================================================
 
-VERSION="2.0.0"
+VERSION="3.0.0"
 
 # --- i18n: L "polski" "english" ---------------------------------------------
 # LANG_SEL ustawiane w secure-scan.sh (pl|en)
@@ -55,8 +55,12 @@ add_check() {
     <div class='card-name'>$name</div>
     <div class='detail'>$detail</div>$fixhtml
   </div>"
-  local jn="${name//\"/\'}" jd="${detail//\"/\'}"
-  JSON="$JSON{\"category\":\"${CAT_NAME//\"/\'}\",\"name\":\"$jn\",\"status\":\"$status\",\"weight\":$weight,\"detail\":\"$jd\"},"
+  # Poprawne escapowanie JSON (odporne na backslashe z danych, np. lsof \x20)
+  local jn jd jc
+  jn="${name//\\/\\\\}";     jn="${jn//$'\n'/\\n}"; jn="${jn//\\\\n/\\n}"; jn="${jn//\"/\\\"}"
+  jd="${detail//\\/\\\\}";   jd="${jd//$'\n'/\\n}"; jd="${jd//\\\\n/\\n}"; jd="${jd//\"/\\\"}"
+  jc="${CAT_NAME//\\/\\\\}"; jc="${jc//\"/\\\"}"
+  JSON="$JSON{\"category\":\"$jc\",\"name\":\"$jn\",\"status\":\"$status\",\"weight\":$weight,\"detail\":\"$jd\"},"
   # Wyjście na żywo w terminalu
   if [ "${MODE:-html}" = "html" ]; then
     local sym; case "$status" in PASS) sym="✅";; WARN) sym="⚠️ ";; FAIL) sym="❌";; INFO) sym="ℹ️ ";; esac

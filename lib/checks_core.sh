@@ -81,6 +81,12 @@ else
   DLY="$(echo "$SL" | grep -oE '[0-9]+ seconds' | head -1)"
   add_check "$(L 'Blokada ekranu hasłem' 'Screen lock password')" WARN 7 "$(L 'Hasło z opóźnieniem' 'Password delayed') (${DLY:-?})." "sysadminctl -screenLock immediate"
 fi
+HINT="$(defaults read /Library/Preferences/com.apple.loginwindow RetriesUntilHint 2>/dev/null)"
+if [ -z "$HINT" ] || [ "$HINT" = "0" ]; then
+  add_check "$(L 'Podpowiedzi hasła (logowanie)' 'Password hints (login)')" PASS 3 "$(L 'Wyłączone — hasło nie jest podpowiadane.' 'Disabled — the password is never hinted.')" ""
+else
+  add_check "$(L 'Podpowiedzi hasła (logowanie)' 'Password hints (login)')" WARN 3 "$(L 'Włączone — po kilku próbach system pokazuje podpowiedź hasła.' 'Enabled — after failed tries macOS shows a password hint.')" "sudo defaults write /Library/Preferences/com.apple.loginwindow RetriesUntilHint -int 0"
+fi
 end_cat
 
 # ===== E. PRYWATNOŚĆ I SYSTEM =====

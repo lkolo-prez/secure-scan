@@ -23,7 +23,8 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB="$SCRIPT_DIR/lib"
-OUT_DIR="$SCRIPT_DIR"
+# OUT_DIR nadpisywalny (np. gdy silnik działa z wnętrza .app — bundle jest tylko do odczytu)
+OUT_DIR="${SECURE_SCAN_OUT:-$SCRIPT_DIR}"
 HTML="$OUT_DIR/security-dashboard.html"
 NOW="$(date '+%Y-%m-%d %H:%M:%S')"
 
