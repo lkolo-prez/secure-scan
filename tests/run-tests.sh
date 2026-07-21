@@ -78,8 +78,8 @@ JE="$(bash "$ROOT/secure-scan.sh" --only files --lang en --json 2>/dev/null)"
 assert_contains "EN: lang=en"           '"lang":"en"'    "$JE"
 assert_contains "EN: nazwa po angielsku" 'File Integrity' "$JE"
 
-echo "▶ 8. CLI: --only ogranicza moduły"
-JO="$(bash "$ROOT/secure-scan.sh" --only network --json 2>/dev/null)"
+echo "▶ 8. CLI: --only ogranicza moduły (język wymuszony — CI bywa EN)"
+JO="$(bash "$ROOT/secure-scan.sh" --only network --lang pl --json 2>/dev/null)"
 assert_contains "only network: kategoria sieci" 'Aktywność sieciowa' "$JO"
 assert_absent   "only network: bez FileVault"   'FileVault'          "$JO"
 
