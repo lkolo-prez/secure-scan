@@ -1,3 +1,7 @@
+<p align="center">
+  <a href="https://aircloud.com.pl"><img src=".github/assets/banner.png" alt="AIRCLOUD: DevOps, cloud and AI engineering" width="100%"></a>
+</p>
+
 # 🛡️ secure-scan
 
 > **Advanced macOS security auditor** — a native menu-bar **`.app`** (and CLI) that runs 53 read-only checks across 11 categories, shows a **Security Score (0–100)**, offers **one-click auto-hardening**, and can **auto-block malicious domains**.
@@ -7,7 +11,7 @@
 [![CI](https://github.com/lkolo-prez/secure-scan/actions/workflows/ci.yml/badge.svg)](https://github.com/lkolo-prez/secure-scan/actions/workflows/ci.yml)
 ![shell](https://img.shields.io/badge/shell-bash-4EAA25?logo=gnu-bash&logoColor=white)
 ![platform](https://img.shields.io/badge/platform-macOS%20(Apple%20Silicon%20%26%20Intel)-000?logo=apple)
-![license](https://img.shields.io/badge/license-MIT-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![deps](https://img.shields.io/badge/dependencies-none-success)
 ![bilingual](https://img.shields.io/badge/i18n-EN%20%2F%20PL-orange)
 
@@ -70,14 +74,23 @@ secure-scan --fix                 # auto-harden (asks before each change)
 secure-scan --fix --yes           # auto-harden, no prompts
 secure-scan --protect             # enable web protection (block malicious domains)
 secure-scan --unprotect           # disable web protection
+secure-scan --protect-status      # show whether web protection is active
 secure-scan --json                # JSON output (CI)
 secure-scan --lang en|pl          # force language
 secure-scan --only core,malware   # run selected modules only
 secure-scan --no-open             # don't open the browser
+secure-scan --no-notify           # no macOS notification
 secure-scan --help | --version
 ```
 
 Modules: `core`, `malware`, `browser`, `perf`, `network`, `files`, `downloads`.
+
+Environment variables:
+
+| Variable | Effect |
+|---|---|
+| `SECURE_SCAN_OUT` | Directory for `security-dashboard.html` (default: the script directory) |
+| `SECURE_SCAN_BLOCKLIST_URL` | Blocklist used by `--protect` (default: [StevenBlack/hosts](https://github.com/StevenBlack/hosts)) |
 
 ## 🌐 Web protection (block malicious sites)
 
@@ -86,7 +99,7 @@ secure-scan --protect     # installs a maintained blocklist into /etc/hosts (nee
 secure-scan --unprotect   # removes it and restores /etc/hosts
 ```
 
-It fetches a well-known, maintained hosts blocklist (malware + phishing + trackers, ~80k domains) with a bundled offline fallback, and writes it into a clearly-marked, reversible block in `/etc/hosts`, then flushes DNS. The app exposes the same thing as a **Web protection** switch.
+It fetches a well-known, maintained hosts blocklist ([StevenBlack/hosts](https://github.com/StevenBlack/hosts) by default) (malware + phishing + trackers, ~80k domains) with a bundled offline fallback, and writes it into a clearly-marked, reversible block in `/etc/hosts`, then flushes DNS. The app exposes the same thing as a **Web protection** switch.
 
 ## 🔍 What it checks
 
@@ -188,3 +201,7 @@ PRs welcome — new checks, translations, fixes. Keep checks **read-only** and d
 ## 📄 License
 
 MIT © 2026 **Aircloud — Łukasz Kołodziej** — see [LICENSE](LICENSE). Open source; contributions welcome.
+
+---
+
+Built by [AIRCLOUD](https://aircloud.com.pl): DevOps, cloud and AI engineering. Security hardening and audits for teams: [aircloud.com.pl/consulting](https://aircloud.com.pl/consulting).
